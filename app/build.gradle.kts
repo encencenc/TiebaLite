@@ -1,4 +1,3 @@
-import com.android.build.gradle.internal.api.BaseVariantOutputImpl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
 
@@ -17,7 +16,6 @@ val keystoreProperties = Properties().apply {
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose.compiler)
     //alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.kotlin.serialization)
@@ -55,13 +53,16 @@ ksp {
 }
 
 android {
-    buildToolsVersion = "36.0.0"
-    compileSdk = 36
+    buildToolsVersion = "37.0.0"
+    compileSdk {
+        version = release(37)
+    }
     defaultConfig {
         applicationId = "com.huanchengfly.tieba.post"
         minSdk = 23
-        //noinspection OldTargetApi
-        targetSdk = 36
+        targetSdk {
+            version = release(37)
+        }
         versionCode = applicationVersionCode
         versionName = applicationVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -124,7 +125,7 @@ android {
         metricsDestination.set(layout.buildDirectory.dir("compose_metrics"))
         reportsDestination.set(layout.buildDirectory.dir("compose_metrics"))
 
-        stabilityConfigurationFile.set(rootProject.layout.projectDirectory.file("compose_stability_configuration.txt").asFile)
+        stabilityConfigurationFiles.add(rootProject.layout.projectDirectory.file("compose_stability_configuration.txt"))
     }
     packaging {
         resources {
@@ -133,13 +134,12 @@ android {
         }
     }
     namespace = "com.huanchengfly.tieba.post"
-    applicationVariants.configureEach {
-        val variant = this
-        outputs.configureEach {
-            val fileName =
-                "${variant.buildType.name}-${applicationVersionName}(${applicationVersionCode}).apk"
+}
 
-            (this as BaseVariantOutputImpl).outputFileName = fileName
+androidComponents {
+    onVariants { variant ->
+        variant.outputs.forEach { output ->
+            output.outputFileName.set("${variant.buildType}-${applicationVersionName}(${applicationVersionCode}).apk")
         }
     }
 }

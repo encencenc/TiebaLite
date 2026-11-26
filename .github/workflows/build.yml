@@ -21,6 +21,9 @@ jobs:
           java-version: "17"
           distribution: "zulu"
 
+      - name: Install Android SDK 37
+        run: sdkmanager --install "platforms;android-37.0" "build-tools;37.0.0"
+
       - name: Decode Keystore
         id: decode_keystore
         if: startsWith(github.ref, 'refs/tags/')
