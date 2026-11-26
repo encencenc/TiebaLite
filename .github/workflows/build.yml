@@ -22,7 +22,9 @@ jobs:
           distribution: "zulu"
 
       - name: Install Android SDK 37
-        run: sdkmanager --install "platforms;android-37.0" "build-tools;37.0.0"
+        uses: android-actions/setup-android@v4.0.4
+        with:
+          packages: "platform-tools platforms;android-37.0 build-tools;37.0.0"
 
       - name: Decode Keystore
         id: decode_keystore
@@ -54,19 +56,16 @@ jobs:
 
       - name: Read Output Metadata
         id: read_output_metadata
-        uses: juliangruber/read-file-action@v1
-        with:
-          path: ./app/build/outputs/apk/release/output-metadata.json
-          trim: true
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          artifact_name=$(jq -er '.elements[0] | select(.versionName and .versionCode) | "release-\(.versionName)(\(.versionCode))"' app/build/outputs/apk/release/output-metadata.json)
+          printf 'artifact_name=%s\n' "$artifact_name" >> "$GITHUB_OUTPUT"
 
       - name: Upload Release Package
-        env:
-          version_code: ${{ fromJSON(steps.read_output_metadata.outputs.content).elements[0].versionCode }}
-          version_name: ${{ fromJSON(steps.read_output_metadata.outputs.content).elements[0].versionName }}
         uses: actions/upload-artifact@v4
-        if: ${{ ! startsWith(github.ref, 'refs/tags/') }}
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         with:
-          name: "release-${{ env.version_name }}(${{ env.version_code }})"
+          name: ${{ steps.read_output_metadata.outputs.artifact_name }}
           path: ./app/build/outputs/apk/release
 
       - name: Upload Release Package to public
